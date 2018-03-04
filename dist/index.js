@@ -193,11 +193,7 @@ class LevelDirectedGraphMap       {
         return { value: pairs.shift(), done: false };
       }
       await new Promise((resolve, reject) => {
-<<<<<<< Updated upstream
         this.db.createReadStream({ gt: lastKey, limit: 100, lt: '?' })
-=======
-        this.db.createReadStream({ gt: lastKey, limit: 10, lt: '?' })
->>>>>>> Stashed changes
           .on('data', ({ key }) => {
             const [source, target] = key.slice(1).split('|');
             pairs.push([source, target]);

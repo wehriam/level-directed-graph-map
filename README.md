@@ -1,8 +1,10 @@
 # LevelDB Directed Graph Map
 
-[![CircleCI](https://circleci.com/gh/wehriam/directed-graph-map.svg?style=svg)](https://circleci.com/gh/wehriam/directed-graph-map) [![npm version](https://badge.fury.io/js/directed-graph-map.svg)](http://badge.fury.io/js/directed-graph-map) [![codecov](https://codecov.io/gh/wehriam/directed-graph-map/branch/master/graph/badge.svg)](https://codecov.io/gh/wehriam/directed-graph-map)
+[![CircleCI](https://circleci.com/gh/wehriam/level-directed-graph-map.svg?style=svg)](https://circleci.com/gh/wehriam/level-directed-graph-map) [![npm version](https://badge.fury.io/js/level-directed-graph-map.svg)](http://badge.fury.io/js/level-directed-graph-map) [![codecov](https://codecov.io/gh/wehriam/level-directed-graph-map/branch/master/graph/badge.svg)](https://codecov.io/gh/wehriam/level-directed-graph-map)
 
-Directed graph data structure [implemented](https://github.com/wehriam/directed-graph-map/blob/master/src/index.js) using LevelDB. Similiar to multi-key maps or bidirectional maps.
+Directed graph data structure [implemented](https://github.com/wehriam/level-directed-graph-map/blob/master/src/index.js) using LevelDB. Similiar to multi-key maps or bidirectional maps.
+
+See [directed-graph-map](https://www.npmjs.com/package/directed-graph-map) for a synchronous, in-memory version.
 
 ```js
 const dg = new LevelDirectedGraphMap([], './optional-db-path', {});
@@ -27,12 +29,12 @@ run();
 
 ## Install
 
-`yarn add level-directed-graph-map`
+`yarn add level-level-directed-graph-map`
 
 ## Usage
 
 ```js
-const DirectedGraphMap = require('directed-graph-map');
+const DirectedGraphMap = require('level-directed-graph-map');
 
 const dgm = new LevelDirectedGraphMap([['A', 'B']], './optional-db-path', {});
 
