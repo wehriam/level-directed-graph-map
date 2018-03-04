@@ -266,7 +266,6 @@ class LevelDirectedGraphMap<S, T> {
   /**
    * Array of edges
    *
-   * @name LevelDirectedGraphMap#edges
    * @return {Promise<Array<[S, T]>>}
    */
   async edges():Promise<Array<[S, T]>> {
@@ -286,7 +285,6 @@ class LevelDirectedGraphMap<S, T> {
   /**
    * Edge count. Costly operation, use sparingly.
    *
-   * @name LevelDirectedGraphMap#size
    * @return {Promise<number>}
    */
   async size():Promise<number> {
@@ -307,7 +305,6 @@ class LevelDirectedGraphMap<S, T> {
   /**
    * Set of sources
    *
-   * @name LevelDirectedGraphMap#sources
    * @return {Promise<Set<string>>}
    */
   async sources():Promise<Set<string>> {
@@ -327,7 +324,6 @@ class LevelDirectedGraphMap<S, T> {
   /**
    * Set of targets
    *
-   * @name LevelDirectedGraphMap#targets
    * @return {Promise<Set<string>>}
    */
   async targets():Promise<Set<string>> {

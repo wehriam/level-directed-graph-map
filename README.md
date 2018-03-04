@@ -113,11 +113,11 @@ run();
     -   [hasTarget](#hastarget)
     -   [getSources](#getsources)
     -   [getTargets](#gettargets)
+    -   [edges](#edges)
+    -   [size](#size)
+    -   [sources](#sources)
+    -   [targets](#targets)
 -   [LevelDirectedGraphMap#ready](#leveldirectedgraphmapready)
--   [LevelDirectedGraphMap#edges](#leveldirectedgraphmapedges)
--   [LevelDirectedGraphMap#size](#leveldirectedgraphmapsize)
--   [LevelDirectedGraphMap#sources](#leveldirectedgraphmapsources)
--   [LevelDirectedGraphMap#targets](#leveldirectedgraphmaptargets)
 
 ### LevelDirectedGraphMap
 
@@ -222,30 +222,30 @@ Get all targets with edges from a source.
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** Set of targets
 
-### LevelDirectedGraphMap#ready
-
-Resolves when the map is initialized and ready for use
-
-### LevelDirectedGraphMap#edges
+#### edges
 
 Array of edges
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;\[S, T]>>** 
 
-### LevelDirectedGraphMap#size
+#### size
 
 Edge count. Costly operation, use sparingly.
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** 
 
-### LevelDirectedGraphMap#sources
+#### sources
 
 Set of sources
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** 
 
-### LevelDirectedGraphMap#targets
+#### targets
 
 Set of targets
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** 
+
+### LevelDirectedGraphMap#ready
+
+Resolves when the map is initialized and ready for use
