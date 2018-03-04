@@ -280,7 +280,7 @@ test('Get edges, sources, and targets', async () => {
   const C = uuid.v4();
   const map = new LevelDirectedGraphMap([[A, B], [B, C]]);
   await map.ready;
-  expect(await map.edges()).toEqual([[A, B], [B, C]]);
+  expect(await map.edges()).toEqual(expect.arrayContaining([[A, B], [B, C]]));
   expect(await map.sources()).toEqual(new Set([A, B]));
   expect(await map.targets()).toEqual(new Set([B, C]));
   // $FlowFixMe: computed property
@@ -300,7 +300,7 @@ test('Get edges, sources, and targets', async () => {
     }
   }
   await map.removeEdge(A, B);
-  expect(await map.edges()).toEqual([[B, C]]);
+  expect(await map.edges()).toEqual(expect.arrayContaining([[B, C]]));
   expect(await map.sources()).toEqual(new Set([B]));
   expect(await map.targets()).toEqual(new Set([C]));
   // $FlowFixMe: computed property

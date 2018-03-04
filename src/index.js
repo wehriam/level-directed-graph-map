@@ -20,6 +20,8 @@ class LevelDirectedGraphMap<S, T> {
   /**
    * Create a directed graph map.
    * @param {Iterable<[S, T]>} [edges=[]] - Iterable containing source -> target pairs
+   * @param {string} [location=''] - Path to the underlying LevelDB
+   * @param {Object} [options={}] - Options passed on to the underlying LevelDB store
    */
   constructor(edges?:Iterable<[string, string]> = [], location?: string, options?:Object) {
     this.removeDatabaseOnClose = !location;
@@ -62,7 +64,10 @@ class LevelDirectedGraphMap<S, T> {
    * @return {void}
    */
   async addEdge(source:string, target:string):Promise<void> {
-    await this.db.put(`${source}|${target}`, 1);
+    await Promise.all([
+      this.db.put(`>${source}|${target}`, 1),
+      this.db.put(`<${source}|${target}`, 1),
+    ]);
   }
 
   /**
@@ -72,7 +77,10 @@ class LevelDirectedGraphMap<S, T> {
    * @return {void}
    */
   async removeEdge(source:string, target:string):Promise<void> {
-    await this.db.del(`${source}|${target}`);
+    await Promise.all([
+      this.db.del(`>${source}|${target}`, 1),
+      this.db.del(`<${source}|${target}`, 1),
+    ]);
   }
 
   /**
@@ -83,7 +91,7 @@ class LevelDirectedGraphMap<S, T> {
    */
   async hasEdge(source:string, target:string):Promise<boolean> {
     try {
-      await this.db.get(`${source}|${target}`);
+      await this.db.get(`>${source}|${target}`);
       return true;
     } catch (error) {
       if (error.notFound) {
@@ -99,17 +107,19 @@ class LevelDirectedGraphMap<S, T> {
    * @return {void}
    */
   async removeSource(source:string):Promise<void> {
-    // $FlowFixMe: computed property
-    const iterator = this[Symbol.iterator]();
-    while (true) {
-      const { value, done } = await iterator.next();
-      if (done) {
-        break;
-      }
-      if (value[0] === source) {
-        await this.removeEdge(value[0], value[1]);
-      }
-    }
+    const promises = [];
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `>${source}`, lt: `>${source}~` })
+        .on('data', ({ key }) => {
+          const [s, t] = key.slice(1).split('|');
+          promises.push(this.removeEdge(s, t));
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    await Promise.all(promises);
   }
 
   /**
@@ -159,17 +169,16 @@ class LevelDirectedGraphMap<S, T> {
    */
   async getTargets(source:string):Promise<Set<string>> {
     const targets = new Set();
-    // $FlowFixMe: computed property
-    const iterator = this[Symbol.iterator]();
-    while (true) {
-      const { value, done } = await iterator.next();
-      if (done) {
-        break;
-      }
-      if (value[0] === source) {
-        targets.add(value[1]);
-      }
-    }
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `>${source}`, lt: `>${source}~` })
+        .on('data', ({ key }) => {
+          targets.add(key.split('|')[1]);
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
     return targets;
   }
 
@@ -189,7 +198,7 @@ class LevelDirectedGraphMap<S, T> {
       await new Promise((resolve, reject) => {
         this.db.createReadStream({ gt: lastKey, limit: 10 })
           .on('data', ({ key }) => {
-            const [source, target] = key.split('|');
+            const [source, target] = key.slice(1).split('|');
             pairs.push([source, target]);
           }).on('error', (error) => {
             reject(error);
