@@ -17,9 +17,10 @@ class LevelDirectedGraphMap       {
                        
                                  
                    
+
   /**
    * Create a directed graph map.
-   * @param {Iterable<[S, T]>} [edges=[]] - Iterable containing source -> target pairs
+   * @param {Iterable<[string, string]>} [edges=[]] - Iterable containing source -> target pairs
    * @param {string} [location=''] - Path to the underlying LevelDB
    * @param {Object} [options={}] - Options passed on to the underlying LevelDB store
    */
@@ -28,6 +29,14 @@ class LevelDirectedGraphMap       {
     this.ready = this.init(edges, location || path.join(os.tmpdir(), uuid.v4()), options || {});
     this.boundClose = this._close.bind(this); // eslint-disable-line no-underscore-dangle
   }
+
+  /**
+   * Resolves when the map is initialized and ready for use
+   *
+   * @name LevelDirectedGraphMap#ready
+   * @type Promise<void>
+   * @readonly
+   */
 
   async init(edges                            = [], location       , options        ) {
     this.location = location;

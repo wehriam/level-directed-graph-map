@@ -7,9 +7,14 @@ Directed graph data structure [implemented](https://github.com/wehriam/level-dir
 See [directed-graph-map](https://www.npmjs.com/package/directed-graph-map) for a synchronous, in-memory version.
 
 ```js
-const dg = new LevelDirectedGraphMap([], './optional-db-path', {});
+<<<<<<< Updated upstream
+=======
 
+>>>>>>> Stashed changes
 const run = async () => {
+  const dg = new LevelDirectedGraphMap([], './optional-db-path', {});
+  await dg.ready;
+
                               //  A
   await dg.addEdge('A', 'X'); //  ├── X
   await dg.addEdge('A', 'Y'); //  ├── Y
@@ -36,9 +41,11 @@ run();
 ```js
 const LevelDirectedGraphMap = require('level-directed-graph-map');
 
-const dgm = new LevelDirectedGraphMap([['A', 'B']], './optional-db-path', {});
-
 const run = async () => {
+
+  const dgm = new LevelDirectedGraphMap([['A', 'B']], './optional-db-path', {});
+  await dgm.ready;
+
   //  A
   //  └── B
   
@@ -106,6 +113,7 @@ run();
     -   [hasTarget](#hastarget)
     -   [getSources](#getsources)
     -   [getTargets](#gettargets)
+-   [LevelDirectedGraphMap#ready](#leveldirectedgraphmapready)
 -   [LevelDirectedGraphMap#edges](#leveldirectedgraphmapedges)
 -   [LevelDirectedGraphMap#size](#leveldirectedgraphmapsize)
 -   [LevelDirectedGraphMap#sources](#leveldirectedgraphmapsources)
@@ -117,7 +125,7 @@ Class representing a Level Directed Graph Map
 
 **Parameters**
 
--   `edges` **Iterable&lt;\[S, T]>** Iterable containing source -> target pairs (optional, default `[]`)
+-   `edges` **Iterable&lt;\[[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String), [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)]>** Iterable containing source -> target pairs (optional, default `[]`)
 -   `location` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Path to the underlying LevelDB (optional, default `''`)
 -   `options` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** Options passed on to the underlying LevelDB store (optional, default `{}`)
 
@@ -213,6 +221,10 @@ Get all targets with edges from a source.
 -   `source` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Source of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** Set of targets
+
+### LevelDirectedGraphMap#ready
+
+Resolves when the map is initialized and ready for use
 
 ### LevelDirectedGraphMap#edges
 
