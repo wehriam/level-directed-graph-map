@@ -10,8 +10,8 @@ const uuid = require('uuid');
  * Class representing a Level Directed Graph Map
  */
 class LevelDirectedGraphMap<S, T> {
-  sourceMap:Map<S, Set<T>>;
-  targetMap:Map<T, Set<S>>;
+  sourceMap:Map<S, Set<string>>;
+  targetMap:Map<T, Set<string>>;
   ready:Promise<void>;
   db:Object;
   boundClose: Function;
@@ -21,15 +21,13 @@ class LevelDirectedGraphMap<S, T> {
    * Create a directed graph map.
    * @param {Iterable<[S, T]>} [edges=[]] - Iterable containing source -> target pairs
    */
-  constructor(edges?:Iterable<[S, T]> = [], location?: string, options?:Object) {
-    this.sourceMap = new Map();
-    this.targetMap = new Map();
+  constructor(edges?:Iterable<[string, string]> = [], location?: string, options?:Object) {
     this.removeDatabaseOnClose = !location;
     this.ready = this.init(edges, location || path.join(os.tmpdir(), uuid.v4()), options || {});
     this.boundClose = this._close.bind(this); // eslint-disable-line no-underscore-dangle
   }
 
-  async init(edges:Iterable<[S, T]> = [], location:string, options: Object) {
+  async init(edges:Iterable<[string, string]> = [], location:string, options: Object) {
     this.location = location;
     await fs.ensureDir(location);
     this.db = level(location, options);
@@ -63,13 +61,8 @@ class LevelDirectedGraphMap<S, T> {
    * @param {T} target - Target of the edge
    * @return {void}
    */
-  async addEdge(source:S, target:T):Promise<void> {
-    const sources = this.sourceMap.get(source) || new Set();
-    const targets = this.targetMap.get(target) || new Set();
-    sources.add(target);
-    targets.add(source);
-    this.sourceMap.set(source, sources);
-    this.targetMap.set(target, targets);
+  async addEdge(source:string, target:string):Promise<void> {
+    await this.db.put(`${source}|${target}`, 1);
   }
 
   /**
@@ -78,20 +71,8 @@ class LevelDirectedGraphMap<S, T> {
    * @param {T} target - Target of the edge
    * @return {void}
    */
-  async removeEdge(source:S, target:T):Promise<void> {
-    const sources = this.sourceMap.get(source);
-    const targets = this.targetMap.get(target);
-    if (!sources || !targets) {
-      return;
-    }
-    sources.delete(target);
-    targets.delete(source);
-    if (sources.size === 0) {
-      this.sourceMap.delete(source);
-    }
-    if (targets.size === 0) {
-      this.targetMap.delete(target);
-    }
+  async removeEdge(source:string, target:string):Promise<void> {
+    await this.db.del(`${source}|${target}`);
   }
 
   /**
@@ -100,12 +81,16 @@ class LevelDirectedGraphMap<S, T> {
    * @param {T} target - Target of the edge
    * @return {boolean} - Whether the edge exists in the graph map.
    */
-  async hasEdge(source:S, target:T):Promise<boolean> {
-    const sources = this.sourceMap.get(source);
-    if (!sources) {
-      return false;
+  async hasEdge(source:string, target:string):Promise<boolean> {
+    try {
+      await this.db.get(`${source}|${target}`);
+      return true;
+    } catch (error) {
+      if (error.notFound) {
+        return false;
+      }
+      throw error;
     }
-    return sources.has(target);
   }
 
   /**
@@ -113,17 +98,18 @@ class LevelDirectedGraphMap<S, T> {
    * @param {S} source - Source of the edge
    * @return {void}
    */
-  async removeSource(source:S):Promise<void> {
-    if (!this.sourceMap.has(source)) {
-      return;
-    }
-    const sources = this.sourceMap.get(source);
-    if (sources) {
-      for (const target of sources) {
-        this.removeEdge(source, target);
+  async removeSource(source:string):Promise<void> {
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      if (value[0] === source) {
+        await this.removeEdge(value[0], value[1]);
       }
     }
-    this.sourceMap.delete(source);
   }
 
   /**
@@ -131,46 +117,93 @@ class LevelDirectedGraphMap<S, T> {
    * @param {T} target - Target of the edge
    * @return {void}
    */
-  async removeTarget(target:T):Promise<void> {
-    if (!this.targetMap.has(target)) {
-      return;
-    }
-    const targets = this.targetMap.get(target);
-    if (targets) {
-      for (const source of targets) {
-        this.removeEdge(source, target);
+  async removeTarget(target:string):Promise<void> {
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      if (value[1] === target) {
+        await this.removeEdge(value[0], value[1]);
       }
     }
-    this.targetMap.delete(target);
   }
 
   /**
    * Get all sources with edges to a target.
    * @param {T} target - Target of the edge
-   * @return {Set<S>} - Set of sources
+   * @return {Set<string>} - Set of sources
    */
-  async getSources(target:T):Promise<Set<S>> {
-    return new Set(this.targetMap.get(target));
+  async getSources(target:string):Promise<Set<string>> {
+    const sources = new Set();
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      if (value[1] === target) {
+        sources.add(value[0]);
+      }
+    }
+    return sources;
   }
 
   /**
    * Get all targets with edges from a source.
    * @param {S} source - Source of the edge
-   * @return {Set<T>} - Set of targets
+   * @return {Set<string>} - Set of targets
    */
-  async getTargets(source:S):Promise<Set<T>> {
-    return new Set(this.sourceMap.get(source));
+  async getTargets(source:string):Promise<Set<string>> {
+    const targets = new Set();
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      if (value[0] === source) {
+        targets.add(value[1]);
+      }
+    }
+    return targets;
   }
 
   /* :: @@iterator(): Iterator<[S, T]> { return ({}: any); } */
   // $FlowFixMe: computed property
   [Symbol.iterator]() {
-    const edgesPromise = this.edges();
-    let i = 0;
+    const pairs = [];
+    let lastKey;
+    let end = false;
     const next = async () => {
-      const edges = await edgesPromise;
-      const length = edges.length;
-      return i < length ? { value: edges[i++], done: false } : { done: true };
+      if (pairs.length > 0) {
+        return { value: pairs.shift(), done: false };
+      }
+      if (end) {
+        return { done: true };
+      }
+      await new Promise((resolve, reject) => {
+        this.db.createReadStream({ gt: lastKey, limit: 10 })
+          .on('data', ({ key }) => {
+            const [source, target] = key.split('|');
+            pairs.push([source, target]);
+          }).on('error', (error) => {
+            reject(error);
+          }).on('close', () => {
+            resolve();
+          })
+          .on('end', () => {
+            end = true;
+          });
+      });
+      if (pairs.length > 0) {
+        lastKey = pairs[pairs.length - 1][0];
+      }
+      return next();
     };
     return { next };
   }
@@ -183,10 +216,14 @@ class LevelDirectedGraphMap<S, T> {
    */
   async edges():Promise<Array<[S, T]>> {
     const edges = [];
-    for (const [source, targets] of this.sourceMap) {
-      for (const target of targets) {
-        edges.push([source, target]);
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
       }
+      edges.push(value);
     }
     return edges;
   }
@@ -206,20 +243,40 @@ class LevelDirectedGraphMap<S, T> {
    * Set of sources
    *
    * @name LevelDirectedGraphMap#sources
-   * @return Set<S>
+   * @return Set<string>
    */
-  async sources():Promise<Set<S>> {
-    return new Set(this.sourceMap.keys());
+  async sources():Promise<Set<string>> {
+    const sources = new Set();
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      sources.add(value[0]);
+    }
+    return sources;
   }
 
   /**
    * Set of targets
    *
    * @name LevelDirectedGraphMap#targets
-   * @return Set<T>
+   * @return Set<string>
    */
-  async targets():Promise<Set<T>> {
-    return new Set(this.targetMap.keys());
+  async targets():Promise<Set<string>> {
+    const targets = new Set();
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      targets.add(value[1]);
+    }
+    return targets;
   }
 }
 
