@@ -1,81 +1,93 @@
-# Directed Graph Map
+# LevelDB Directed Graph Map
 
 [![CircleCI](https://circleci.com/gh/wehriam/directed-graph-map.svg?style=svg)](https://circleci.com/gh/wehriam/directed-graph-map) [![npm version](https://badge.fury.io/js/directed-graph-map.svg)](http://badge.fury.io/js/directed-graph-map) [![codecov](https://codecov.io/gh/wehriam/directed-graph-map/branch/master/graph/badge.svg)](https://codecov.io/gh/wehriam/directed-graph-map)
 
-Directed graph data structure [implemented](https://github.com/wehriam/directed-graph-map/blob/master/src/index.js) using native `Map` and `Set` objects. Similiar to multi-key maps or bidirectional maps.
+Directed graph data structure [implemented](https://github.com/wehriam/directed-graph-map/blob/master/src/index.js) using LevelDB. Similiar to multi-key maps or bidirectional maps.
 
 ```js
-const dg = new DirectedGraphMap();
-                      //  A
-dg.addEdge('A', 'X'); //  ├── X
-dg.addEdge('A', 'Y'); //  ├── Y
-dg.addEdge('A', 'Z'); //  └── Z
+const dg = new LevelDirectedGraphMap([], './optional-db-path', {});
 
-dg.getTargets('A');   //  X, Y, Z
+const run = async () => {
+                              //  A
+  await dg.addEdge('A', 'X'); //  ├── X
+  await dg.addEdge('A', 'Y'); //  ├── Y
+  await dg.addEdge('A', 'Z'); //  └── Z
 
-dg.size; // 3
-dg.edges; // [['A', 'X'], ['A', 'Y'], ['A', 'Z']]
-dg.sources; // ['A']
-dg.targets; // ['X', 'Y', 'z']
+  await dg.getTargets('A');   //  X, Y, Z
+
+  await dg.size(); // 3
+  await dg.edges(); // [['A', 'X'], ['A', 'Y'], ['A', 'Z']]
+  await dg.sources(); // ['A']
+  await dg.targets(); // ['X', 'Y', 'z']
+
+}
+
+run();
+
 ```
 
 ## Install
 
-`yarn add directed-graph-map`
+`yarn add level-directed-graph-map`
 
 ## Usage
 
 ```js
 const DirectedGraphMap = require('directed-graph-map');
 
-const dgm = new DirectedGraphMap([['A', 'B']]);
+const dgm = new LevelDirectedGraphMap([['A', 'B']], './optional-db-path', {});
 
-//  A
-//  └── B
+const run = async () => {
+  //  A
+  //  └── B
+  
+  await dgm.hasEdge('A', 'B'); // true
+  
+  await dgm.addEdge('B', 'C');
+  
+  //  A
+  //  └── B
+  //      └── C
+  
+  await  dgm.hasEdge('B', 'C'); // true
+  await  dgm.getTargets('A'); // new Set(['B']);
+  await  dgm.getTargets('B'); // new Set(['C']);
+  await  dgm.getTargets('C'); // new Set();
+  await  dgm.getSources('A'); // new Set();
+  await  dgm.getSources('B'); // new Set(['A']);
+  await  dgm.getSources('C'); // new Set(['B']);
+  
+  await  dgm.removeSource('A');
+  
+  //  B
+  //  └── C
+  
+  await dgm.hasEdge('A', 'B'); // false
+  await dgm.getTargets('A'); // new Set();
+  
+  await dgm.removeTarget('C');
+  
+  //  Empty
+  
+  await dgm.getTargets('B'); // new Set();
+  await dgm.hasEdge('B', 'C'); // false
+  
+  await dgm.addEdge('A', 'B');
+  
+  //  A
+  //  └── B
+  
+  await dgm.hasEdge('A', 'B'); // true
+  
+  await dgm.removeEdge('A', 'B');
+  
+  //  Empty
+  
+  await dgm.hasEdge('A', 'B'); // false
+}
 
-dgm.hasEdge('A', 'B'); // true
+run();
 
-dgm.addEdge('B', 'C');
-
-//  A
-//  └── B
-//      └── C
-
-dgm.hasEdge('B', 'C'); // true
-dgm.getTargets('A'); // new Set(['B']);
-dgm.getTargets('B'); // new Set(['C']);
-dgm.getTargets('C'); // new Set();
-dgm.getSources('A'); // new Set();
-dgm.getSources('B'); // new Set(['A']);
-dgm.getSources('C'); // new Set(['B']);
-
-dgm.removeSource('A');
-
-//  B
-//  └── C
-
-dgm.hasEdge('A', 'B'); // false
-dgm.getTargets('A'); // new Set();
-
-dgm.removeTarget('C');
-
-//  Empty
-
-dgm.getTargets('B'); // new Set();
-dgm.hasEdge('B', 'C'); // false
-
-dgm.addEdge('A', 'B');
-
-//  A
-//  └── B
-
-dgm.hasEdge('A', 'B'); // true
-
-dgm.removeEdge('A', 'B');
-
-//  Empty
-
-dgm.hasEdge('A', 'B'); // false
 ```
 
 ## API

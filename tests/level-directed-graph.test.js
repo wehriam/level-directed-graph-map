@@ -333,3 +333,25 @@ test('Get edges, sources, and targets', async () => {
   await map.close();
 });
 
+test('Large graph', async () => {
+  const map = new LevelDirectedGraphMap();
+  await map.ready;
+  const set = new Set(Array(10000).fill().map(() => uuid.v4()));
+  for(const x of set) {
+    await map.addEdge(x, x);
+  }
+  // $FlowFixMe: computed property
+  const iterator = map[Symbol.iterator]();
+  while (true) {
+    const { value, done } = await iterator.next();
+    if (done) {
+      break;
+    }
+    const [source, target] = value;
+    expect(source).toEqual(target);
+    set.delete(source);
+  }
+  expect(set.size).toEqual(0);
+  await map.close();
+});
+

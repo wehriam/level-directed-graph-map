@@ -61,7 +61,7 @@ class LevelDirectedGraphMap<S, T> {
    * Add an edge to the graph map.
    * @param {S} source - Source of the edge
    * @param {T} target - Target of the edge
-   * @return {void}
+   * @return {Promise<void>}
    */
   async addEdge(source:string, target:string):Promise<void> {
     await Promise.all([
@@ -74,7 +74,7 @@ class LevelDirectedGraphMap<S, T> {
    * Remove an edge from the graph map.
    * @param {S} source - Source of the edge
    * @param {T} target - Target of the edge
-   * @return {void}
+   * @return {Promise<void>}
    */
   async removeEdge(source:string, target:string):Promise<void> {
     await Promise.all([
@@ -87,7 +87,7 @@ class LevelDirectedGraphMap<S, T> {
    * Test if a edge exists in the graph map.
    * @param {S} source - Source of the edge
    * @param {T} target - Target of the edge
-   * @return {boolean} - Whether the edge exists in the graph map.
+   * @return {Promise<boolean>} - Whether the edge exists in the graph map.
    */
   async hasEdge(source:string, target:string):Promise<boolean> {
     try {
@@ -104,7 +104,7 @@ class LevelDirectedGraphMap<S, T> {
   /**
    * Remove all edges from a source.
    * @param {S} source - Source of the edge
-   * @return {void}
+   * @return {Promise<void>}
    */
   async removeSource(source:string):Promise<void> {
     const promises = [];
@@ -125,7 +125,7 @@ class LevelDirectedGraphMap<S, T> {
   /**
    * Remove all edges to a target.
    * @param {T} target - Target of the edge
-   * @return {void}
+   * @return {Promise<void>}
    */
   async removeTarget(target:string):Promise<void> {
     const promises = [];
@@ -146,28 +146,27 @@ class LevelDirectedGraphMap<S, T> {
   /**
    * Get all sources with edges to a target.
    * @param {T} target - Target of the edge
-   * @return {Set<string>} - Set of sources
+   * @return {Promise<Set<string>>} - Set of sources
    */
   async getSources(target:string):Promise<Set<string>> {
     const sources = new Set();
-    // $FlowFixMe: computed property
-    const iterator = this[Symbol.iterator]();
-    while (true) {
-      const { value, done } = await iterator.next();
-      if (done) {
-        break;
-      }
-      if (value[1] === target) {
-        sources.add(value[0]);
-      }
-    }
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `<${target}`, lt: `<${target}~` })
+        .on('data', ({ key }) => {
+          sources.add(key.split('|')[1]);
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
     return sources;
   }
 
   /**
    * Get all targets with edges from a source.
    * @param {S} source - Source of the edge
-   * @return {Set<string>} - Set of targets
+   * @return {Promise<Set<string>>} - Set of targets
    */
   async getTargets(source:string):Promise<Set<string>> {
     const targets = new Set();
@@ -188,17 +187,13 @@ class LevelDirectedGraphMap<S, T> {
   // $FlowFixMe: computed property
   [Symbol.iterator]() {
     const pairs = [];
-    let lastKey;
-    let end = false;
+    let lastKey = '>';
     const next = async () => {
       if (pairs.length > 0) {
         return { value: pairs.shift(), done: false };
       }
-      if (end) {
-        return { done: true };
-      }
       await new Promise((resolve, reject) => {
-        this.db.createReadStream({ gt: lastKey, limit: 10 })
+        this.db.createReadStream({ gt: lastKey, limit: 10, lt: '?' })
           .on('data', ({ key }) => {
             const [source, target] = key.slice(1).split('|');
             pairs.push([source, target]);
@@ -206,13 +201,13 @@ class LevelDirectedGraphMap<S, T> {
             reject(error);
           }).on('close', () => {
             resolve();
-          })
-          .on('end', () => {
-            end = true;
           });
       });
       if (pairs.length > 0) {
-        lastKey = pairs[pairs.length - 1][0];
+        const lastPair = pairs[pairs.length - 1];
+        lastKey = `>${lastPair[0]}|${lastPair[1]}`;
+      } else {
+        return { done: true };
       }
       return next();
     };
@@ -223,7 +218,7 @@ class LevelDirectedGraphMap<S, T> {
    * Array of edges
    *
    * @name LevelDirectedGraphMap#edges
-   * @return Array<[S, T]>
+   * @return {Promise<Array<[S, T]>>}
    */
   async edges():Promise<Array<[S, T]>> {
     const edges = [];
@@ -243,7 +238,7 @@ class LevelDirectedGraphMap<S, T> {
    * Edge count
    *
    * @name LevelDirectedGraphMap#size
-   * @return number
+   * @return {Promise<number>}
    */
   async size():Promise<number> {
     const edges = await this.edges();
@@ -254,7 +249,7 @@ class LevelDirectedGraphMap<S, T> {
    * Set of sources
    *
    * @name LevelDirectedGraphMap#sources
-   * @return Set<string>
+   * @return {Promise<Set<string>>}
    */
   async sources():Promise<Set<string>> {
     const sources = new Set();
@@ -274,7 +269,7 @@ class LevelDirectedGraphMap<S, T> {
    * Set of targets
    *
    * @name LevelDirectedGraphMap#targets
-   * @return Set<string>
+   * @return {Promise<Set<string>>}
    */
   async targets():Promise<Set<string>> {
     const targets = new Set();
