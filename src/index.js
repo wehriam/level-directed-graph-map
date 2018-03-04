@@ -193,7 +193,7 @@ class LevelDirectedGraphMap<S, T> {
         return { value: pairs.shift(), done: false };
       }
       await new Promise((resolve, reject) => {
-        this.db.createReadStream({ gt: lastKey, limit: 10, lt: '?' })
+        this.db.createReadStream({ gt: lastKey, limit: 100, lt: '?' })
           .on('data', ({ key }) => {
             const [source, target] = key.slice(1).split('|');
             pairs.push([source, target]);

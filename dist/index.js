@@ -1,21 +1,59 @@
 //      
 
-/**
- * Class representing a Directed Graph Map
- */
-class DirectedGraphMap       {
-                           
-                           
+const level = require('level');
+const os = require('os');
+const path = require('path');
+const fs = require('fs-extra');
+const uuid = require('uuid');
 
+/**
+ * Class representing a Level Directed Graph Map
+ */
+class LevelDirectedGraphMap       {
+                                
+                                
+                      
+            
+                       
+                                 
+                   
   /**
    * Create a directed graph map.
    * @param {Iterable<[S, T]>} [edges=[]] - Iterable containing source -> target pairs
+   * @param {string} [location=''] - Path to the underlying LevelDB
+   * @param {Object} [options={}] - Options passed on to the underlying LevelDB store
    */
-  constructor(edges                   = []) {
-    this.sourceMap = new Map();
-    this.targetMap = new Map();
+  constructor(edges                             = [], location         , options        ) {
+    this.removeDatabaseOnClose = !location;
+    this.ready = this.init(edges, location || path.join(os.tmpdir(), uuid.v4()), options || {});
+    this.boundClose = this._close.bind(this); // eslint-disable-line no-underscore-dangle
+  }
+
+  async init(edges                            = [], location       , options        ) {
+    this.location = location;
+    await fs.ensureDir(location);
+    this.db = level(location, options);
+    process.on('exit', this.boundClose);
+    const addEdgePromises = [];
     for (const [source, target] of edges) {
-      this.addEdge(source, target);
+      addEdgePromises.push(this.addEdge(source, target));
+    }
+    await Promise.all(addEdgePromises);
+  }
+
+  close() {
+    process.removeListener('exit', this.boundClose);
+    return this._close(); // eslint-disable-line no-underscore-dangle
+  }
+
+  async _close() {
+    if (!this.db) {
+      return;
+    }
+    await this.db.close();
+    delete this.db;
+    if (this.removeDatabaseOnClose) {
+      await fs.remove(this.location);
     }
   }
 
@@ -23,156 +61,233 @@ class DirectedGraphMap       {
    * Add an edge to the graph map.
    * @param {S} source - Source of the edge
    * @param {T} target - Target of the edge
-   * @return {void}
+   * @return {Promise<void>}
    */
-  addEdge(source  , target  )      {
-    const sources = this.sourceMap.get(source) || new Set();
-    const targets = this.targetMap.get(target) || new Set();
-    sources.add(target);
-    targets.add(source);
-    this.sourceMap.set(source, sources);
-    this.targetMap.set(target, targets);
+  async addEdge(source       , target       )               {
+    await Promise.all([
+      this.db.put(`>${source}|${target}`, 1),
+      this.db.put(`<${target}|${source}`, 1),
+    ]);
   }
 
   /**
    * Remove an edge from the graph map.
    * @param {S} source - Source of the edge
    * @param {T} target - Target of the edge
-   * @return {void}
+   * @return {Promise<void>}
    */
-  removeEdge(source  , target  )      {
-    const sources = this.sourceMap.get(source);
-    const targets = this.targetMap.get(target);
-    if (!sources || !targets) {
-      return;
-    }
-    sources.delete(target);
-    targets.delete(source);
-    if (sources.size === 0) {
-      this.sourceMap.delete(source);
-    }
-    if (targets.size === 0) {
-      this.targetMap.delete(target);
-    }
+  async removeEdge(source       , target       )               {
+    await Promise.all([
+      this.db.del(`>${source}|${target}`, 1),
+      this.db.del(`<${target}|${source}`, 1),
+    ]);
   }
 
   /**
    * Test if a edge exists in the graph map.
    * @param {S} source - Source of the edge
    * @param {T} target - Target of the edge
-   * @return {boolean} - Whether the edge exists in the graph map.
+   * @return {Promise<boolean>} - Whether the edge exists in the graph map.
    */
-  hasEdge(source  , target  )         {
-    const sources = this.sourceMap.get(source);
-    if (!sources) {
-      return false;
+  async hasEdge(source       , target       )                  {
+    try {
+      await this.db.get(`>${source}|${target}`);
+      return true;
+    } catch (error) {
+      if (error.notFound) {
+        return false;
+      }
+      throw error;
     }
-    return sources.has(target);
   }
 
   /**
    * Remove all edges from a source.
    * @param {S} source - Source of the edge
-   * @return {void}
+   * @return {Promise<void>}
    */
-  removeSource(source  )      {
-    if (!this.sourceMap.has(source)) {
-      return;
-    }
-    const sources = this.sourceMap.get(source);
-    if (sources) {
-      for (const target of sources) {
-        this.removeEdge(source, target);
-      }
-    }
-    this.sourceMap.delete(source);
+  async removeSource(source       )               {
+    const promises = [];
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `>${source}`, lt: `>${source}~` })
+        .on('data', ({ key }) => {
+          const [s, t] = key.slice(1).split('|');
+          promises.push(this.removeEdge(s, t));
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    await Promise.all(promises);
   }
 
   /**
    * Remove all edges to a target.
    * @param {T} target - Target of the edge
-   * @return {void}
+   * @return {Promise<void>}
    */
-  removeTarget(target  )      {
-    if (!this.targetMap.has(target)) {
-      return;
-    }
-    const targets = this.targetMap.get(target);
-    if (targets) {
-      for (const source of targets) {
-        this.removeEdge(source, target);
-      }
-    }
-    this.targetMap.delete(target);
+  async removeTarget(target       )               {
+    const promises = [];
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `<${target}`, lt: `<${target}~` })
+        .on('data', ({ key }) => {
+          const [t, s] = key.slice(1).split('|');
+          promises.push(this.removeEdge(s, t));
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    await Promise.all(promises);
   }
 
   /**
    * Get all sources with edges to a target.
    * @param {T} target - Target of the edge
-   * @return {Set<S>} - Set of sources
+   * @return {Promise<Set<string>>} - Set of sources
    */
-  getSources(target  )        {
-    return new Set(this.targetMap.get(target));
+  async getSources(target       )                      {
+    const sources = new Set();
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `<${target}`, lt: `<${target}~` })
+        .on('data', ({ key }) => {
+          sources.add(key.split('|')[1]);
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    return sources;
   }
 
   /**
    * Get all targets with edges from a source.
    * @param {S} source - Source of the edge
-   * @return {Set<T>} - Set of targets
+   * @return {Promise<Set<string>>} - Set of targets
    */
-  getTargets(source  )        {
-    return new Set(this.sourceMap.get(source));
+  async getTargets(source       )                      {
+    const targets = new Set();
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `>${source}`, lt: `>${source}~` })
+        .on('data', ({ key }) => {
+          targets.add(key.split('|')[1]);
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    return targets;
   }
 
   /* :: @@iterator(): Iterator<[S, T]> { return ({}: any); } */
   // $FlowFixMe: computed property
   [Symbol.iterator]() {
-    return this.edges[Symbol.iterator]();
+    const pairs = [];
+    let lastKey = '>';
+    const next = async () => {
+      if (pairs.length > 0) {
+        return { value: pairs.shift(), done: false };
+      }
+      await new Promise((resolve, reject) => {
+<<<<<<< Updated upstream
+        this.db.createReadStream({ gt: lastKey, limit: 100, lt: '?' })
+=======
+        this.db.createReadStream({ gt: lastKey, limit: 10, lt: '?' })
+>>>>>>> Stashed changes
+          .on('data', ({ key }) => {
+            const [source, target] = key.slice(1).split('|');
+            pairs.push([source, target]);
+          }).on('error', (error) => {
+            reject(error);
+          }).on('close', () => {
+            resolve();
+          });
+      });
+      if (pairs.length > 0) {
+        const lastPair = pairs[pairs.length - 1];
+        lastKey = `>${lastPair[0]}|${lastPair[1]}`;
+      } else {
+        return { done: true };
+      }
+      return next();
+    };
+    return { next };
   }
 
   /**
    * Array of edges
    *
-   * @name DirectedGraphMap#edges
-   * @type Array<[S, T]>
-   * @readonly
+   * @name LevelDirectedGraphMap#edges
+   * @return {Promise<Array<[S, T]>>}
    */
-  get edges()               {
-    return [...this.sourceMap.keys()].reduce((edges, source) => edges.concat([...this.getTargets(source)].map((target) => [source, target])), []);
+  async edges()                        {
+    const edges = [];
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      edges.push(value);
+    }
+    return edges;
   }
 
   /**
    * Edge count
    *
-   * @name DirectedGraphMap#size
-   * @type number
-   * @readonly
+   * @name LevelDirectedGraphMap#size
+   * @return {Promise<number>}
    */
-  get size()        {
-    return this.edges.length;
+  async size()                 {
+    const edges = await this.edges();
+    return edges.length;
   }
 
   /**
    * Set of sources
    *
-   * @name DirectedGraphMap#sources
-   * @type Set<S>
-   * @readonly
+   * @name LevelDirectedGraphMap#sources
+   * @return {Promise<Set<string>>}
    */
-  get sources()        {
-    return new Set(this.sourceMap.keys());
+  async sources()                      {
+    const sources = new Set();
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      sources.add(value[0]);
+    }
+    return sources;
   }
 
   /**
    * Set of targets
    *
-   * @name DirectedGraphMap#targets
-   * @type Set<T>
-   * @readonly
+   * @name LevelDirectedGraphMap#targets
+   * @return {Promise<Set<string>>}
    */
-  get targets()        {
-    return new Set(this.targetMap.keys());
+  async targets()                      {
+    const targets = new Set();
+    // $FlowFixMe: computed property
+    const iterator = this[Symbol.iterator]();
+    while (true) {
+      const { value, done } = await iterator.next();
+      if (done) {
+        break;
+      }
+      targets.add(value[1]);
+    }
+    return targets;
   }
 }
 
-module.exports = DirectedGraphMap;
+module.exports = LevelDirectedGraphMap;

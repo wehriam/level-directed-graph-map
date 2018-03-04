@@ -23,7 +23,6 @@ const run = async () => {
 }
 
 run();
-
 ```
 
 ## Install
@@ -87,7 +86,6 @@ const run = async () => {
 }
 
 run();
-
 ```
 
 ## API
@@ -96,7 +94,7 @@ run();
 
 #### Table of Contents
 
--   [DirectedGraphMap](#directedgraphmap)
+-   [LevelDirectedGraphMap](#leveldirectedgraphmap)
     -   [addEdge](#addedge)
     -   [removeEdge](#removeedge)
     -   [hasEdge](#hasedge)
@@ -104,18 +102,20 @@ run();
     -   [removeTarget](#removetarget)
     -   [getSources](#getsources)
     -   [getTargets](#gettargets)
--   [DirectedGraphMap#edges](#directedgraphmapedges)
--   [DirectedGraphMap#size](#directedgraphmapsize)
--   [DirectedGraphMap#sources](#directedgraphmapsources)
--   [DirectedGraphMap#targets](#directedgraphmaptargets)
+-   [LevelDirectedGraphMap#edges](#leveldirectedgraphmapedges)
+-   [LevelDirectedGraphMap#size](#leveldirectedgraphmapsize)
+-   [LevelDirectedGraphMap#sources](#leveldirectedgraphmapsources)
+-   [LevelDirectedGraphMap#targets](#leveldirectedgraphmaptargets)
 
-### DirectedGraphMap
+### LevelDirectedGraphMap
 
-Class representing a Directed Graph Map
+Class representing a Level Directed Graph Map
 
 **Parameters**
 
--   `edges` **Iterable&lt;\[S, T]>**  (optional, default `[]`)
+-   `edges` **Iterable&lt;\[S, T]>** Iterable containing source -> target pairs (optional, default `[]`)
+-   `location` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Path to the underlying LevelDB (optional, default `''`)
+-   `options` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** Options passed on to the underlying LevelDB store (optional, default `{}`)
 
 #### addEdge
 
@@ -126,7 +126,7 @@ Add an edge to the graph map.
 -   `source` **S** Source of the edge
 -   `target` **T** Target of the edge
 
-Returns **void** 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
 
 #### removeEdge
 
@@ -137,7 +137,7 @@ Remove an edge from the graph map.
 -   `source` **S** Source of the edge
 -   `target` **T** Target of the edge
 
-Returns **void** 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
 
 #### hasEdge
 
@@ -148,7 +148,7 @@ Test if a edge exists in the graph map.
 -   `source` **S** Source of the edge
 -   `target` **T** Target of the edge
 
-Returns **[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** Whether the edge exists in the graph map.
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)>** Whether the edge exists in the graph map.
 
 #### removeSource
 
@@ -158,7 +158,7 @@ Remove all edges from a source.
 
 -   `source` **S** Source of the edge
 
-Returns **void** 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
 
 #### removeTarget
 
@@ -168,7 +168,7 @@ Remove all edges to a target.
 
 -   `target` **T** Target of the edge
 
-Returns **void** 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
 
 #### getSources
 
@@ -178,7 +178,7 @@ Get all sources with edges to a target.
 
 -   `target` **T** Target of the edge
 
-Returns **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;S>** Set of sources
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** Set of sources
 
 #### getTargets
 
@@ -188,20 +188,28 @@ Get all targets with edges from a source.
 
 -   `source` **S** Source of the edge
 
-Returns **[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;T>** Set of targets
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** Set of targets
 
-### DirectedGraphMap#edges
+### LevelDirectedGraphMap#edges
 
 Array of edges
 
-### DirectedGraphMap#size
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;\[S, T]>>** 
+
+### LevelDirectedGraphMap#size
 
 Edge count
 
-### DirectedGraphMap#sources
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)>** 
+
+### LevelDirectedGraphMap#sources
 
 Set of sources
 
-### DirectedGraphMap#targets
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** 
+
+### LevelDirectedGraphMap#targets
 
 Set of targets
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** 

@@ -337,7 +337,7 @@ test('Large graph', async () => {
   const map = new LevelDirectedGraphMap();
   await map.ready;
   const set = new Set(Array(10000).fill().map(() => uuid.v4()));
-  for(const x of set) {
+  for (const x of set) {
     await map.addEdge(x, x);
   }
   // $FlowFixMe: computed property
