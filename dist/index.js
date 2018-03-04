@@ -59,8 +59,8 @@ class LevelDirectedGraphMap       {
 
   /**
    * Add an edge to the graph map.
-   * @param {S} source - Source of the edge
-   * @param {T} target - Target of the edge
+   * @param {string} source - Source of the edge
+   * @param {string} target - Target of the edge
    * @return {Promise<void>}
    */
   async addEdge(source       , target       )               {
@@ -72,8 +72,8 @@ class LevelDirectedGraphMap       {
 
   /**
    * Remove an edge from the graph map.
-   * @param {S} source - Source of the edge
-   * @param {T} target - Target of the edge
+   * @param {string} source - Source of the edge
+   * @param {string} target - Target of the edge
    * @return {Promise<void>}
    */
   async removeEdge(source       , target       )               {
@@ -85,8 +85,8 @@ class LevelDirectedGraphMap       {
 
   /**
    * Test if a edge exists in the graph map.
-   * @param {S} source - Source of the edge
-   * @param {T} target - Target of the edge
+   * @param {string} source - Source of the edge
+   * @param {string} target - Target of the edge
    * @return {Promise<boolean>} - Whether the edge exists in the graph map.
    */
   async hasEdge(source       , target       )                  {
@@ -103,7 +103,7 @@ class LevelDirectedGraphMap       {
 
   /**
    * Remove all edges from a source.
-   * @param {S} source - Source of the edge
+   * @param {string} source - Source of the edge
    * @return {Promise<void>}
    */
   async removeSource(source       )               {
@@ -124,7 +124,7 @@ class LevelDirectedGraphMap       {
 
   /**
    * Remove all edges to a target.
-   * @param {T} target - Target of the edge
+   * @param {string} target - Target of the edge
    * @return {Promise<void>}
    */
   async removeTarget(target       )               {
@@ -145,7 +145,7 @@ class LevelDirectedGraphMap       {
 
   /**
    * Get all sources with edges to a target.
-   * @param {T} target - Target of the edge
+   * @param {string} target - Target of the edge
    * @return {Promise<Set<string>>} - Set of sources
    */
   async getSources(target       )                      {
@@ -165,7 +165,7 @@ class LevelDirectedGraphMap       {
 
   /**
    * Get all targets with edges from a source.
-   * @param {S} source - Source of the edge
+   * @param {string} source - Source of the edge
    * @return {Promise<Set<string>>} - Set of targets
    */
   async getTargets(source       )                      {

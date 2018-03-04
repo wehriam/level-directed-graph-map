@@ -125,8 +125,8 @@ Add an edge to the graph map.
 
 **Parameters**
 
--   `source` **S** Source of the edge
--   `target` **T** Target of the edge
+-   `source` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Source of the edge
+-   `target` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Target of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
 
@@ -136,8 +136,8 @@ Remove an edge from the graph map.
 
 **Parameters**
 
--   `source` **S** Source of the edge
--   `target` **T** Target of the edge
+-   `source` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Source of the edge
+-   `target` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Target of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
 
@@ -147,8 +147,8 @@ Test if a edge exists in the graph map.
 
 **Parameters**
 
--   `source` **S** Source of the edge
--   `target` **T** Target of the edge
+-   `source` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Source of the edge
+-   `target` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Target of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)>** Whether the edge exists in the graph map.
 
@@ -158,7 +158,7 @@ Remove all edges from a source.
 
 **Parameters**
 
--   `source` **S** Source of the edge
+-   `source` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Source of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
 
@@ -168,7 +168,7 @@ Remove all edges to a target.
 
 **Parameters**
 
--   `target` **T** Target of the edge
+-   `target` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Target of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
 
@@ -178,7 +178,7 @@ Get all sources with edges to a target.
 
 **Parameters**
 
--   `target` **T** Target of the edge
+-   `target` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Target of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** Set of sources
 
@@ -188,7 +188,7 @@ Get all targets with edges from a source.
 
 **Parameters**
 
--   `source` **S** Source of the edge
+-   `source` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Source of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Set](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)&lt;[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)>>** Set of targets
 
