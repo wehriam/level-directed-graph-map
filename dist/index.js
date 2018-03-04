@@ -235,14 +235,24 @@ class LevelDirectedGraphMap       {
   }
 
   /**
-   * Edge count
+   * Edge count. Costly operation, use sparingly.
    *
    * @name LevelDirectedGraphMap#size
    * @return {Promise<number>}
    */
   async size()                 {
-    const edges = await this.edges();
-    return edges.length;
+    let i = 0;
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: '>', lt: '?' })
+        .on('data', () => {
+          i += 1;
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    return i;
   }
 
   /**

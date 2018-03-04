@@ -340,6 +340,7 @@ test('Large graph', async () => {
   for (const x of set) {
     await map.addEdge(x, x);
   }
+  expect(await map.size()).toEqual(10000);
   // $FlowFixMe: computed property
   const iterator = map[Symbol.iterator]();
   while (true) {
@@ -351,7 +352,6 @@ test('Large graph', async () => {
     expect(source).toEqual(target);
     set.delete(source);
   }
-  expect(set.size).toEqual(0);
   await map.close();
 });
 
