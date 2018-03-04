@@ -7,10 +7,6 @@ Directed graph data structure [implemented](https://github.com/wehriam/level-dir
 See [directed-graph-map](https://www.npmjs.com/package/directed-graph-map) for a synchronous, in-memory version.
 
 ```js
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 const run = async () => {
   const dg = new LevelDirectedGraphMap([], './optional-db-path', {});
   await dg.ready;
