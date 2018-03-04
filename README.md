@@ -8,7 +8,8 @@ See [directed-graph-map](https://www.npmjs.com/package/directed-graph-map) for a
 
 ```js
 const run = async () => {
-  const dg = new LevelDirectedGraphMap([], './optional-db-path', {});
+  const db = level('./optional-db-path');
+  const dg = new LevelDirectedGraphMap(db, [], { namespace: 'example' });
   await dg.ready;
                               //  A
   await dg.addEdge('A', 'X'); //  ├── X
@@ -33,11 +34,12 @@ run();
 ## Usage
 
 ```js
+const level = require('level');
 const LevelDirectedGraphMap = require('level-directed-graph-map');
 
 const run = async () => {
-
-  const dgm = new LevelDirectedGraphMap([['A', 'B']], './optional-db-path', {});
+  const db = level('./optional-db-path');
+  const dgm = new LevelDirectedGraphMap(db, [['A', 'B']], { namespace: 'example' });
   await dgm.ready;
 
   //  A
