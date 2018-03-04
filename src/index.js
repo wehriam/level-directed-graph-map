@@ -66,7 +66,7 @@ class LevelDirectedGraphMap<S, T> {
   async addEdge(source:string, target:string):Promise<void> {
     await Promise.all([
       this.db.put(`>${source}|${target}`, 1),
-      this.db.put(`<${source}|${target}`, 1),
+      this.db.put(`<${target}|${source}`, 1),
     ]);
   }
 
@@ -79,7 +79,7 @@ class LevelDirectedGraphMap<S, T> {
   async removeEdge(source:string, target:string):Promise<void> {
     await Promise.all([
       this.db.del(`>${source}|${target}`, 1),
-      this.db.del(`<${source}|${target}`, 1),
+      this.db.del(`<${target}|${source}`, 1),
     ]);
   }
 
@@ -128,17 +128,19 @@ class LevelDirectedGraphMap<S, T> {
    * @return {void}
    */
   async removeTarget(target:string):Promise<void> {
-    // $FlowFixMe: computed property
-    const iterator = this[Symbol.iterator]();
-    while (true) {
-      const { value, done } = await iterator.next();
-      if (done) {
-        break;
-      }
-      if (value[1] === target) {
-        await this.removeEdge(value[0], value[1]);
-      }
-    }
+    const promises = [];
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `<${target}`, lt: `<${target}~` })
+        .on('data', ({ key }) => {
+          const [t, s] = key.slice(1).split('|');
+          promises.push(this.removeEdge(s, t));
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    await Promise.all(promises);
   }
 
   /**
