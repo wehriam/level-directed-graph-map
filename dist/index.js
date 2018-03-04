@@ -144,6 +144,46 @@ class LevelDirectedGraphMap       {
   }
 
   /**
+   * Test if a source exists in the graph map.
+   * @param {string} source - Source of the edge
+   * @return {Promise<boolean>} - Whether the source exists in the graph map.
+   */
+  async hasSource(source       )                  {
+    let exists = false;
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `>${source}`, lt: `>${source}~`, limit: 1 })
+        .on('data', () => {
+          exists = true;
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    return exists;
+  }
+
+  /**
+   * Test if a target exists in the graph map.
+   * @param {string} target - Target of the edge
+   * @return {Promise<boolean>} - Whether the target exists in the graph map.
+   */
+  async hasTarget(target       )                  {
+    let exists = false;
+    await new Promise((resolve, reject) => {
+      this.db.createReadStream({ gt: `<${target}`, lt: `<${target}~`, limit: 1 })
+        .on('data', () => {
+          exists = true;
+        }).on('error', (error) => {
+          reject(error);
+        }).on('close', () => {
+          resolve();
+        });
+    });
+    return exists;
+  }
+
+  /**
    * Get all sources with edges to a target.
    * @param {string} target - Target of the edge
    * @return {Promise<Set<string>>} - Set of sources

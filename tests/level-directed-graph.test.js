@@ -8,8 +8,12 @@ test('Documentation', async () => {
   const map = new LevelDirectedGraphMap([['A', 'B']]);
   await map.ready;
   expect(await map.hasEdge('A', 'B')).toEqual(true); // true
+  expect(await map.hasSource('B')).toEqual(false); // true
+  expect(await map.hasTarget('C')).toEqual(false); // true
   await map.addEdge('B', 'C');
   expect(await map.hasEdge('B', 'C')).toEqual(true); // true
+  expect(await map.hasSource('B')).toEqual(true); // true
+  expect(await map.hasTarget('C')).toEqual(true); // true
   expect(await map.getTargets('A')).toEqual(new Set(['B'])); // new Set(["B"]);
   expect(await map.getTargets('B')).toEqual(new Set(['C'])); // new Set(["C"]);
   expect(await map.getTargets('C')).toEqual(new Set()); // new Set();

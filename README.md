@@ -102,6 +102,8 @@ run();
     -   [hasEdge](#hasedge)
     -   [removeSource](#removesource)
     -   [removeTarget](#removetarget)
+    -   [hasSource](#hassource)
+    -   [hasTarget](#hastarget)
     -   [getSources](#getsources)
     -   [getTargets](#gettargets)
 -   [LevelDirectedGraphMap#edges](#leveldirectedgraphmapedges)
@@ -171,6 +173,26 @@ Remove all edges to a target.
 -   `target` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Target of the edge
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;void>** 
+
+#### hasSource
+
+Test if a source exists in the graph map.
+
+**Parameters**
+
+-   `source` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Source of the edge
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)>** Whether the source exists in the graph map.
+
+#### hasTarget
+
+Test if a target exists in the graph map.
+
+**Parameters**
+
+-   `target` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** Target of the edge
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)>** Whether the target exists in the graph map.
 
 #### getSources
 
