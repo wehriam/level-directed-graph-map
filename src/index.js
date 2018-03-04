@@ -1,33 +1,32 @@
 // @flow
 
-const level = require('level');
-const os = require('os');
-const path = require('path');
-const fs = require('fs-extra');
-const uuid = require('uuid');
 
 /**
  * Class representing a Level Directed Graph Map
  */
-class LevelDirectedGraphMap<S, T> {
-  sourceMap:Map<S, Set<string>>;
-  targetMap:Map<T, Set<string>>;
+class LevelDirectedGraphMap {
+  sourceMap:Map<string, Set<string>>;
+  targetMap:Map<string, Set<string>>;
   ready:Promise<void>;
   db:Object;
   boundClose: Function;
   removeDatabaseOnClose: boolean;
   location: string;
-
+  namespace: string;
+  prefixLength: number;
   /**
    * Create a directed graph map.
+   * @param {Object} [db] - Object implementing the LevelUp interface
    * @param {Iterable<[string, string]>} [edges=[]] - Iterable containing source -> target pairs
-   * @param {string} [location=''] - Path to the underlying LevelDB
-   * @param {Object} [options={}] - Options passed on to the underlying LevelDB store
+   * @param {Object} [options={}] - Options object
+   * @param {string} [options.namespace=''] - Prefix used to namespace LevelDB keys
    */
-  constructor(edges?:Iterable<[string, string]> = [], location?: string, options?:Object) {
+  constructor(db:Object, edges?:Iterable<[string, string]> = [], options?: Object = {}) {
     this.removeDatabaseOnClose = !location;
-    this.ready = this.init(edges, location || path.join(os.tmpdir(), uuid.v4()), options || {});
-    this.boundClose = this._close.bind(this); // eslint-disable-line no-underscore-dangle
+    this.db = db;
+    this.namespace = options.namespace || '';
+    this.prefixLength = this.namespace.length + 1;
+    this.ready = this.init(edges);
   }
 
   /**
@@ -38,32 +37,12 @@ class LevelDirectedGraphMap<S, T> {
    * @readonly
    */
 
-  async init(edges:Iterable<[string, string]> = [], location:string, options: Object) {
-    this.location = location;
-    await fs.ensureDir(location);
-    this.db = level(location, options);
-    process.on('exit', this.boundClose);
+  async init(edges:Iterable<[string, string]> = []) {
     const addEdgePromises = [];
     for (const [source, target] of edges) {
       addEdgePromises.push(this.addEdge(source, target));
     }
     await Promise.all(addEdgePromises);
-  }
-
-  close() {
-    process.removeListener('exit', this.boundClose);
-    return this._close(); // eslint-disable-line no-underscore-dangle
-  }
-
-  async _close() {
-    if (!this.db) {
-      return;
-    }
-    await this.db.close();
-    delete this.db;
-    if (this.removeDatabaseOnClose) {
-      await fs.remove(this.location);
-    }
   }
 
   /**
@@ -74,8 +53,8 @@ class LevelDirectedGraphMap<S, T> {
    */
   async addEdge(source:string, target:string):Promise<void> {
     await Promise.all([
-      this.db.put(`>${source}|${target}`, 1),
-      this.db.put(`<${target}|${source}`, 1),
+      this.db.put(`${this.namespace}>${source}|${target}`, 1),
+      this.db.put(`${this.namespace}<${target}|${source}`, 1),
     ]);
   }
 
@@ -87,8 +66,8 @@ class LevelDirectedGraphMap<S, T> {
    */
   async removeEdge(source:string, target:string):Promise<void> {
     await Promise.all([
-      this.db.del(`>${source}|${target}`, 1),
-      this.db.del(`<${target}|${source}`, 1),
+      this.db.del(`${this.namespace}>${source}|${target}`, 1),
+      this.db.del(`${this.namespace}<${target}|${source}`, 1),
     ]);
   }
 
@@ -100,7 +79,7 @@ class LevelDirectedGraphMap<S, T> {
    */
   async hasEdge(source:string, target:string):Promise<boolean> {
     try {
-      await this.db.get(`>${source}|${target}`);
+      await this.db.get(`${this.namespace}>${source}|${target}`);
       return true;
     } catch (error) {
       if (error.notFound) {
@@ -118,9 +97,9 @@ class LevelDirectedGraphMap<S, T> {
   async removeSource(source:string):Promise<void> {
     const promises = [];
     await new Promise((resolve, reject) => {
-      this.db.createReadStream({ gt: `>${source}`, lt: `>${source}~` })
+      this.db.createReadStream({ gt: `${this.namespace}>${source}`, lt: `${this.namespace}>${source}~` })
         .on('data', ({ key }) => {
-          const [s, t] = key.slice(1).split('|');
+          const [s, t] = key.slice(this.prefixLength).split('|');
           promises.push(this.removeEdge(s, t));
         }).on('error', (error) => {
           reject(error);
@@ -139,9 +118,9 @@ class LevelDirectedGraphMap<S, T> {
   async removeTarget(target:string):Promise<void> {
     const promises = [];
     await new Promise((resolve, reject) => {
-      this.db.createReadStream({ gt: `<${target}`, lt: `<${target}~` })
+      this.db.createReadStream({ gt: `${this.namespace}<${target}`, lt: `${this.namespace}<${target}~` })
         .on('data', ({ key }) => {
-          const [t, s] = key.slice(1).split('|');
+          const [t, s] = key.slice(this.prefixLength).split('|');
           promises.push(this.removeEdge(s, t));
         }).on('error', (error) => {
           reject(error);
@@ -160,7 +139,7 @@ class LevelDirectedGraphMap<S, T> {
   async hasSource(source:string):Promise<boolean> {
     let exists = false;
     await new Promise((resolve, reject) => {
-      this.db.createReadStream({ gt: `>${source}`, lt: `>${source}~`, limit: 1 })
+      this.db.createReadStream({ gt: `${this.namespace}>${source}`, lt: `${this.namespace}>${source}~`, limit: 1 })
         .on('data', () => {
           exists = true;
         }).on('error', (error) => {
@@ -180,7 +159,7 @@ class LevelDirectedGraphMap<S, T> {
   async hasTarget(target:string):Promise<boolean> {
     let exists = false;
     await new Promise((resolve, reject) => {
-      this.db.createReadStream({ gt: `<${target}`, lt: `<${target}~`, limit: 1 })
+      this.db.createReadStream({ gt: `${this.namespace}<${target}`, lt: `${this.namespace}<${target}~`, limit: 1 })
         .on('data', () => {
           exists = true;
         }).on('error', (error) => {
@@ -200,7 +179,7 @@ class LevelDirectedGraphMap<S, T> {
   async getSources(target:string):Promise<Set<string>> {
     const sources = new Set();
     await new Promise((resolve, reject) => {
-      this.db.createReadStream({ gt: `<${target}`, lt: `<${target}~` })
+      this.db.createReadStream({ gt: `${this.namespace}<${target}`, lt: `${this.namespace}<${target}~` })
         .on('data', ({ key }) => {
           sources.add(key.split('|')[1]);
         }).on('error', (error) => {
@@ -220,7 +199,7 @@ class LevelDirectedGraphMap<S, T> {
   async getTargets(source:string):Promise<Set<string>> {
     const targets = new Set();
     await new Promise((resolve, reject) => {
-      this.db.createReadStream({ gt: `>${source}`, lt: `>${source}~` })
+      this.db.createReadStream({ gt: `${this.namespace}>${source}`, lt: `${this.namespace}>${source}~` })
         .on('data', ({ key }) => {
           targets.add(key.split('|')[1]);
         }).on('error', (error) => {
@@ -232,19 +211,19 @@ class LevelDirectedGraphMap<S, T> {
     return targets;
   }
 
-  /* :: @@iterator(): Iterator<[S, T]> { return ({}: any); } */
+  /* :: @@iterator(): Iterator<[string, string]> { return ({}: any); } */
   // $FlowFixMe: computed property
   [Symbol.iterator]() {
     const pairs = [];
-    let lastKey = '>';
+    let lastKey = `${this.namespace}>`;
     const next = async () => {
       if (pairs.length > 0) {
         return { value: pairs.shift(), done: false };
       }
       await new Promise((resolve, reject) => {
-        this.db.createReadStream({ gt: lastKey, limit: 100, lt: '?' })
+        this.db.createReadStream({ gt: lastKey, limit: 100, lt: `${this.namespace}?` })
           .on('data', ({ key }) => {
-            const [source, target] = key.slice(1).split('|');
+            const [source, target] = key.slice(this.prefixLength).split('|');
             pairs.push([source, target]);
           }).on('error', (error) => {
             reject(error);
@@ -254,21 +233,25 @@ class LevelDirectedGraphMap<S, T> {
       });
       if (pairs.length > 0) {
         const lastPair = pairs[pairs.length - 1];
-        lastKey = `>${lastPair[0]}|${lastPair[1]}`;
+        lastKey = `${this.namespace}>${lastPair[0]}|${lastPair[1]}`;
       } else {
         return { done: true };
       }
       return next();
     };
-    return { next };
+    const iterable = {
+      [Symbol.iterator]() { return this; },
+      next,
+    };
+    return iterable;
   }
 
   /**
    * Array of edges
    *
-   * @return {Promise<Array<[S, T]>>}
+   * @return {Promise<Array<[string, string]>>}
    */
-  async edges():Promise<Array<[S, T]>> {
+  async edges():Promise<Array<[string, string]>> {
     const edges = [];
     // $FlowFixMe: computed property
     const iterator = this[Symbol.iterator]();
@@ -290,7 +273,7 @@ class LevelDirectedGraphMap<S, T> {
   async size():Promise<number> {
     let i = 0;
     await new Promise((resolve, reject) => {
-      this.db.createReadStream({ gt: '>', lt: '?' })
+      this.db.createReadStream({ gt: `${this.namespace}>`, lt: `${this.namespace}?` })
         .on('data', () => {
           i += 1;
         }).on('error', (error) => {

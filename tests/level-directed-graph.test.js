@@ -3,9 +3,16 @@
 const expect = require('expect');
 const uuid = require('uuid');
 const LevelDirectedGraphMap = require('../src');
+const level = require('level');
+const os = require('os');
+const path = require('path');
+const fs = require('fs-extra');
 
 test('Documentation', async () => {
-  const map = new LevelDirectedGraphMap([['A', 'B']]);
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [['A', 'B']], { namespace: uuid.v4() });
   await map.ready;
   expect(await map.hasEdge('A', 'B')).toEqual(true); // true
   expect(await map.hasSource('B')).toEqual(false); // true
@@ -30,11 +37,14 @@ test('Documentation', async () => {
   expect(await map.hasEdge('A', 'B')).toEqual(true); // true
   await map.removeEdge('A', 'B');
   expect(await map.hasEdge('A', 'B')).toEqual(false); // false
-  await map.close();
+  await db.close();
 });
 
 test('Add and remove pairs', async () => {
-  const map = new LevelDirectedGraphMap();
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [], { namespace: uuid.v4() });
   await map.ready;
   const A = uuid.v4();
   const B = uuid.v4();
@@ -57,11 +67,14 @@ test('Add and remove pairs', async () => {
   expect(await map.getSources(B)).toEqual(new Set());
   expect(await map.sources()).toEqual(new Set());
   expect(await map.targets()).toEqual(new Set());
-  await map.close();
+  await db.close();
 });
 
 test('Remove sources', async () => {
-  const map = new LevelDirectedGraphMap();
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [], { namespace: uuid.v4() });
   await map.ready;
   const A = uuid.v4();
   const B = uuid.v4();
@@ -84,11 +97,14 @@ test('Remove sources', async () => {
   expect(await map.getSources(B)).toEqual(new Set());
   expect(await map.sources()).toEqual(new Set());
   expect(await map.targets()).toEqual(new Set());
-  await map.close();
+  await db.close();
 });
 
 test('Remove targets', async () => {
-  const map = new LevelDirectedGraphMap();
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [], { namespace: uuid.v4() });
   await map.ready;
   const A = uuid.v4();
   const B = uuid.v4();
@@ -111,11 +127,14 @@ test('Remove targets', async () => {
   expect(await map.getSources(B)).toEqual(new Set());
   expect(await map.sources()).toEqual(new Set());
   expect(await map.targets()).toEqual(new Set());
-  await map.close();
+  await db.close();
 });
 
 test('Add and remove groups pairs', async () => {
-  const map = new LevelDirectedGraphMap();
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [], { namespace: uuid.v4() });
   await map.ready;
   const A = uuid.v4();
   const B = uuid.v4();
@@ -203,11 +222,14 @@ test('Add and remove groups pairs', async () => {
   expect(await map.getSources(D)).toEqual(new Set());
   expect(await map.sources()).toEqual(new Set());
   expect(await map.targets()).toEqual(new Set());
-  await map.close();
+  await db.close();
 });
 
 test('Add and remove pairs', async () => {
-  const map = new LevelDirectedGraphMap();
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [], { namespace: uuid.v4() });
   await map.ready;
   const A = uuid.v4();
   const B1 = uuid.v4();
@@ -248,25 +270,31 @@ test('Add and remove pairs', async () => {
   expect(await map.getSources(A)).toEqual(new Set());
   expect(await map.getSources(B1)).toEqual(new Set());
   expect(await map.getSources(B2)).toEqual(new Set());
-  await map.close();
+  await db.close();
 });
 
 test('Initialize with edges', async () => {
   const A = uuid.v4();
   const B = uuid.v4();
   const C = uuid.v4();
-  const map = new LevelDirectedGraphMap([[A, B], [B, C]]);
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [[A, B], [B, C]], { namespace: uuid.v4() });
   await map.ready;
   expect(await map.hasEdge(A, B)).toEqual(true);
   expect(await map.hasEdge(B, C)).toEqual(true);
   expect(await map.hasEdge(A, C)).toEqual(false);
-  await map.close();
+  await db.close();
 });
 
 test('Remove edges that do not exist', async () => {
   const A = uuid.v4();
   const B = uuid.v4();
-  const map = new LevelDirectedGraphMap();
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [], { namespace: uuid.v4() });
   await map.ready;
   expect(await map.hasEdge(A, B)).toEqual(false);
   await map.removeEdge(A, B);
@@ -275,14 +303,17 @@ test('Remove edges that do not exist', async () => {
   expect(await map.hasEdge(A, B)).toEqual(false);
   await map.removeTarget(B);
   expect(await map.hasEdge(A, B)).toEqual(false);
-  await map.close();
+  await db.close();
 });
 
 test('Get edges, sources, and targets', async () => {
   const A = uuid.v4();
   const B = uuid.v4();
   const C = uuid.v4();
-  const map = new LevelDirectedGraphMap([[A, B], [B, C]]);
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [[A, B], [B, C]], { namespace: uuid.v4() });
   await map.ready;
   expect(await map.edges()).toEqual(expect.arrayContaining([[A, B], [B, C]]));
   expect(await map.sources()).toEqual(new Set([A, B]));
@@ -334,11 +365,14 @@ test('Get edges, sources, and targets', async () => {
     }
     throw new Error('Unknown edge.');
   }
-  await map.close();
+  await db.close();
 });
 
 test('Large graph', async () => {
-  const map = new LevelDirectedGraphMap();
+  const location = path.join(os.tmpdir(), uuid.v4());
+  await fs.ensureDir(location);
+  const db = level(location);
+  const map = new LevelDirectedGraphMap(db, [], { namespace: uuid.v4() });
   await map.ready;
   const set = new Set(Array(10000).fill().map(() => uuid.v4()));
   for (const x of set) {
@@ -356,6 +390,6 @@ test('Large graph', async () => {
     expect(source).toEqual(target);
     set.delete(source);
   }
-  await map.close();
+  await db.close();
 });
 
