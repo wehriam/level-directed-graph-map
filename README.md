@@ -10,7 +10,6 @@ See [directed-graph-map](https://www.npmjs.com/package/directed-graph-map) for a
 const run = async () => {
   const dg = new LevelDirectedGraphMap([], './optional-db-path', {});
   await dg.ready;
-
                               //  A
   await dg.addEdge('A', 'X'); //  ├── X
   await dg.addEdge('A', 'Y'); //  ├── Y
@@ -21,8 +20,7 @@ const run = async () => {
   await dg.size(); // 3
   await dg.edges(); // [['A', 'X'], ['A', 'Y'], ['A', 'Z']]
   await dg.sources(); // ['A']
-  await dg.targets(); // ['X', 'Y', 'z']
-
+  await dg.targets(); // ['X', 'Y', 'Z']
 }
 
 run();
