@@ -34,7 +34,7 @@ run();
 ## Usage
 
 ```js
-const DirectedGraphMap = require('level-directed-graph-map');
+const LevelDirectedGraphMap = require('level-directed-graph-map');
 
 const dgm = new LevelDirectedGraphMap([['A', 'B']], './optional-db-path', {});
 
